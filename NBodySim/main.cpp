@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -9,18 +10,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <math.h>
 
+#include "option.h"
 #include "point.h"
 
 #ifndef GL_POINT_SPRITE
 #  define GL_POINT_SPRITE 0x8861
 #endif
 
-#define POINT_CNT 15
+static point vertices_1[POINT_CNT];
+static point vertices_2[POINT_CNT];
 
-static point vertices[POINT_CNT];
-
-static const char* vertex_shader_text =
+static const char *vertex_shader_text =
 "#version 460\n"
 "uniform mat4 vTransform;\n"
 "uniform mat4 vModel;\n"
@@ -37,182 +39,260 @@ static const char* vertex_shader_text =
 "    color = vCol;\n"
 "}\n";
 
-static const char* fragment_shader_text =
+static const char *fragment_shader_text =
 "#version 460\n"
 "varying vec3 color;\n"
 "void main()\n"
 "{\n"
 "    vec2 v = gl_PointCoord - vec2(0.5, 0.5);\n"
 "    float r = v.x * v.x + v.y * v.y;\n"
-"    if (r > 0.25) {\n"
+"    if (r >= 0.2) {\n"
 "        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);\n"
 "    } else {\n"
 "        gl_FragColor = vec4(color, 1.0);\n"
 "    }\n"
 "}\n";
 
-static void error_callback(int error, const char* description)
+static void error_callback(int error, const char *description)
 {
-    fprintf(stderr, "Error: %s\n", description);
+	fprintf(stderr, "Error: %s\n", description);
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 void show_version(void)
 {
-    const GLubyte* version = glGetString(GL_VERSION);
-    const GLubyte* glslVersion =
-        glGetString(GL_SHADING_LANGUAGE_VERSION);
+	const GLubyte *version = glGetString(GL_VERSION);
+	const GLubyte *glslVersion =
+		glGetString(GL_SHADING_LANGUAGE_VERSION);
 
-    GLint major, minor;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
+	GLint major, minor;
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
 
-    printf("GL Version (string)  : %s\n", version);
-    printf("GL Version (integer) : %d.%d\n", major, minor);
-    printf("GLSL Version         : %s\n", glslVersion);
+	printf("GL Version (string)  : %s\n", version);
+	printf("GL Version (integer) : %d.%d\n", major, minor);
+	printf("GLSL Version         : %s\n", glslVersion);
 }
 
 void init_points(void)
 {
-    for (int i = 0; i < POINT_CNT; ++i) {
-        // unsigned int seed = time(NULL) - 100 * i;
-        unsigned int seed = 12345678 - 100 * i;
-        vertices[i] = point(seed);
-    }
+	for (int i = 0; i < POINT_CNT; ++i) {
+#ifdef SEED
+		unsigned int seed = SEED;
+#else
+#	ifdef _DEBUG
+		unsigned int seed = 5566888 - 100 * i;
+#	else
+		unsigned int seed = time(NULL) - 100 * i;
+#	endif
+#endif
+
+		vertices_1[i] = point(seed);
+		vertices_2[i] = vertices_1[i];
+	}
+}
+
+// Ref: https://yangwc.com/2019/06/20/NbodySimulation/
+// TODO: Add z-axis
+void _nBodyCalculate(const point *currpoints, point *newpoint, int i, double dt)
+{
+	double G = 6.6743;
+	double epi = 0.0000000000001;
+	// Acceleration
+	double ax = 0;
+	double ay = 0;
+	// double az = 0;
+
+	for (int j = 0; j < POINT_CNT; ++j) {
+		double rx;
+		double ry;
+		// double rz;
+		double den; // denominator
+
+		rx = currpoints[j]._x - currpoints[i]._x;
+		ry = currpoints[j]._y - currpoints[i]._y;
+		// rz = currpoints[j]._z - currpoints[i]._z;
+
+		den = sqrt(pow(rx * rx + ry * ry + epi, 3.0));
+		// den = sqrt(pow(rx * rx + ry * ry + rz * rz + epi, 3.0));
+
+		ax += currpoints[j]._mass * rx / den;
+		ay += currpoints[j]._mass * ry / den;
+		// az += currpoints[j]._mass * rz / den;
+	}
+
+	ax *= G;
+	ay *= G;
+	// az *= G;
+
+	// Update speed
+	newpoint->_sx = currpoints[i]._sx + ax * dt;
+	newpoint->_sy = currpoints[i]._sy + ay * dt;
+	// newpoint->_sz = currpoints[i]._sz + az * dt;
+
+	// Update position
+	newpoint->_x = currpoints[i]._x + newpoint->_sx * dt;
+	newpoint->_y = currpoints[i]._y + newpoint->_sy * dt;
+	// newpoint->_z = currpoints[i]._z + newpoint->_sz * dt;
+}
+
+void nBodyCalculate(const point *currpoints, point *newpoints, double dt)
+{
+	for (int i = 0; i < POINT_CNT; ++i) {
+		_nBodyCalculate(currpoints, &newpoints[i], i, dt);
+
+#ifdef VERBOSE
+		newpoints[i].log();
+#endif
+	}
+
+#ifdef VERBOSE
+	printf("\n");
+#endif
 }
 
 int main(void)
 {
-    GLFWwindow* window;
-    GLuint vertex_buffer, vertex_shader, fragment_shader, program;
-    GLint vtransform_location, vmodel_location, vview_location, vprojection_location;
-    GLint vpos_location, vcol_location, vsize_location;
+	GLFWwindow *window;
+	GLuint vertex_buffer, vertex_shader, fragment_shader, program;
+	GLint vtransform_location, vmodel_location, vview_location, vprojection_location;
+	GLint vpos_location, vcol_location, vsize_location;
+	double prevtime;
+	point *points1 = vertices_1, *points2 = vertices_2;
 
-    glfwSetErrorCallback(error_callback);
+	glfwSetErrorCallback(error_callback);
 
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
+	if (!glfwInit())
+		exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    window = glfwCreateWindow(1280, 720, "NBodySim", NULL, NULL);
-    if (!window)
-    {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+	window = glfwCreateWindow(1280, 720, "NBodySim", NULL, NULL);
+	if (!window)
+	{
+		glfwTerminate();
+		exit(EXIT_FAILURE);
+	}
 
-    glfwSetKeyCallback(window, key_callback);
+	glfwSetKeyCallback(window, key_callback);
 
-    glfwMakeContextCurrent(window);
-    gladLoadGL();
-    glfwSwapInterval(1);
+	glfwMakeContextCurrent(window);
+	gladLoadGL();
+	glfwSwapInterval(1);
 
-    // NOTE: OpenGL error checks have been omitted for brevity
+	// NOTE: OpenGL error checks have been omitted for brevity
 
-    show_version();
+	show_version();
 
-    init_points();
+	init_points();
 
-    glGenBuffers(1, &vertex_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glGenBuffers(1, &vertex_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_1), vertices_1, GL_STATIC_DRAW);
 
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-    glCompileShader(vertex_shader);
+	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
+	glCompileShader(vertex_shader);
 
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-    glCompileShader(fragment_shader);
+	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
+	glCompileShader(fragment_shader);
 
-    program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
+	program = glCreateProgram();
+	glAttachShader(program, vertex_shader);
+	glAttachShader(program, fragment_shader);
+	glLinkProgram(program);
 
-    vtransform_location = glGetUniformLocation(program, "vTransform");
-    vmodel_location = glGetUniformLocation(program, "vModel");
-    vview_location = glGetUniformLocation(program, "vView");
-    vprojection_location = glGetUniformLocation(program, "vProjection");
-    vpos_location = glGetAttribLocation(program, "vPos");
-    vcol_location = glGetAttribLocation(program, "vCol");
-    vsize_location = glGetAttribLocation(program, "vSize");
+	vtransform_location = glGetUniformLocation(program, "vTransform");
+	vmodel_location = glGetUniformLocation(program, "vModel");
+	vview_location = glGetUniformLocation(program, "vView");
+	vprojection_location = glGetUniformLocation(program, "vProjection");
+	vpos_location = glGetAttribLocation(program, "vPos");
+	vcol_location = glGetAttribLocation(program, "vCol");
+	vsize_location = glGetAttribLocation(program, "vSize");
 
-    glEnableVertexAttribArray(vpos_location);
-    glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
-        sizeof(vertices[0]), (void*)0);
-    glEnableVertexAttribArray(vcol_location);
-    glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-        sizeof(vertices[0]), (void*)(sizeof(float) * 3));
-    glEnableVertexAttribArray(vsize_location);
-    glVertexAttribPointer(vsize_location, 1, GL_FLOAT, GL_FALSE,
-        sizeof(vertices[0]), (void*)(sizeof(float) * 6));
+	glEnableVertexAttribArray(vpos_location);
+	glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
+		sizeof(vertices_1[0]), (void *)0);
+	glEnableVertexAttribArray(vcol_location);
+	glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
+		sizeof(vertices_1[0]), (void *)(sizeof(float) * 3));
+	glEnableVertexAttribArray(vsize_location);
+	glVertexAttribPointer(vsize_location, 1, GL_FLOAT, GL_FALSE,
+		sizeof(vertices_1[0]), (void *)(sizeof(float) * 6));
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glEnable(GL_PROGRAM_POINT_SIZE);
+	glEnable(GL_PROGRAM_POINT_SIZE);
 
-    glEnable(GL_POINT_SPRITE);
-    glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+	glEnable(GL_POINT_SPRITE);
+	glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
 
-    while (!glfwWindowShouldClose(window))
-    {
-        float ratio;
-        float rps;
-        float rotate_degree;
-        int width, height;
-        // mat4x4 m, p, mvp;
-        glm::mat4 trans(1.0f);
-        glm::mat4 model(1.0f);
-        glm::mat4 view(1.0f);
-        glm::mat4 projection(1.0f);
+	prevtime = glfwGetTime();
 
-        glfwGetFramebufferSize(window, &width, &height);
-        ratio = width / (float)height;
+	while (!glfwWindowShouldClose(window))
+	{
+		float ratio;
+		int width, height;
+		double dt; // delta time
+		double currtime;
+		double offset;
+		point *tmp;
+		// mat4x4 m, p, mvp;
+		glm::mat4 trans(1.0f);
+		glm::mat4 model(1.0f);
+		glm::mat4 view(1.0f);
+		glm::mat4 projection(1.0f);
 
-        glViewport(0, 0, width, height);
-        glClear(GL_COLOR_BUFFER_BIT);
+		glfwGetFramebufferSize(window, &width, &height);
+		ratio = width / (float)height;
 
-        // mat4x4_identity(m);
-        // mat4x4_rotate_Z(m, m, (float)glfwGetTime());
-        // mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        // mat4x4_mul(mvp, p, m);
+		glViewport(0, 0, width, height);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-        // trans = glm::translate(trans, glm::vec3(0.0f, -0.2f, 0.0f));
-        // trans = glm::rotate(trans, glm::radians(90.f), glm::vec3(0.0, 0.0, 1.0));
-        // trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+		currtime = (float)glfwGetTime();
+		dt = currtime - prevtime;
+		prevtime = currtime;
 
-        rps = 0.1f;
-        rotate_degree = fmod((float)glfwGetTime() * 360 * rps, 360);
-        trans = glm::rotate(trans, glm::radians(rotate_degree), glm::vec3(0.0, 0.0, 1.0));
+		dt *= DELTA_TIME_MUL;
 
-        model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		nBodyCalculate(points1, points2, dt);
 
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		tmp = points1;
+		points1 = points2;
+		points2 = tmp;
 
-        projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 100.0f);
+		// Update buffer
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices_1), points1);
 
-        glUseProgram(program);
-        glUniformMatrix4fv(vtransform_location, 1, GL_FALSE, glm::value_ptr(trans));
-        glUniformMatrix4fv(vmodel_location, 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(vview_location, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(vprojection_location, 1, GL_FALSE, glm::value_ptr(projection));
-        glDrawArrays(GL_POINTS, 0, POINT_CNT);
+		// Update matrices
+		// mapping (10000.0, 10000.0) to (1.0, 1.0)
+		model = glm::scale(model, glm::vec3(0.0001f, 0.0001f, 0.0001f));
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+		// TODO: Consider z-axis
+		// view = glm::translate(view, glm::vec3(0.0f, 0.0f, -1.0f));
+		// projection = glm::perspective(glm::radians(110.0f), ratio, 0.5f, 100.0f);
 
-    glfwDestroyWindow(window);
+		glUseProgram(program);
+		glUniformMatrix4fv(vtransform_location, 1, GL_FALSE, glm::value_ptr(trans));
+		glUniformMatrix4fv(vmodel_location, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(vview_location, 1, GL_FALSE, glm::value_ptr(view));
+		glUniformMatrix4fv(vprojection_location, 1, GL_FALSE, glm::value_ptr(projection));
+		glDrawArrays(GL_POINTS, 0, POINT_CNT);
 
-    glfwTerminate();
-    exit(EXIT_SUCCESS);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	glfwDestroyWindow(window);
+
+	glfwTerminate();
+	exit(EXIT_SUCCESS);
 }
