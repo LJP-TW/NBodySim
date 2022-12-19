@@ -8,22 +8,17 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+
+#include "point.h"
 
 #ifndef GL_POINT_SPRITE
 #  define GL_POINT_SPRITE 0x8861
 #endif
 
-static const struct
-{
-    float x, y;
-    float r, g, b;
-    float size;
-} vertices[3] =
-{
-    { -0.6f, -0.4f, 1.f, 0.f, 0.f, 20.0f },
-    {  0.6f, -0.4f, 0.f, 1.f, 0.f, 10.0f },
-    {   0.f,  0.6f, 0.f, 0.f, 1.f, 30.0f }
-};
+#define POINT_CNT 15
+
+static point vertices[POINT_CNT];
 
 static const char* vertex_shader_text =
 "#version 460\n"
@@ -32,12 +27,12 @@ static const char* vertex_shader_text =
 "uniform mat4 vView;\n"
 "uniform mat4 vProjection;\n"
 "attribute vec3 vCol;\n"
-"attribute vec2 vPos;\n"
+"attribute vec3 vPos;\n"
 "attribute float vSize;\n"
 "varying vec3 color;\n"
 "void main()\n"
 "{\n"
-"    gl_Position = vProjection * vView * vModel * vTransform * vec4(vPos, 0.0, 1.0);\n"
+"    gl_Position = vProjection * vView * vModel * vTransform * vec4(vPos, 1.0);\n"
 "    gl_PointSize = vSize;\n"
 "    color = vCol;\n"
 "}\n";
@@ -50,7 +45,7 @@ static const char* fragment_shader_text =
 "    vec2 v = gl_PointCoord - vec2(0.5, 0.5);\n"
 "    float r = v.x * v.x + v.y * v.y;\n"
 "    if (r > 0.25) {\n"
-"        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"
+"        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);\n"
 "    } else {\n"
 "        gl_FragColor = vec4(color, 1.0);\n"
 "    }\n"
@@ -65,6 +60,30 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+void show_version(void)
+{
+    const GLubyte* version = glGetString(GL_VERSION);
+    const GLubyte* glslVersion =
+        glGetString(GL_SHADING_LANGUAGE_VERSION);
+
+    GLint major, minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+    printf("GL Version (string)  : %s\n", version);
+    printf("GL Version (integer) : %d.%d\n", major, minor);
+    printf("GLSL Version         : %s\n", glslVersion);
+}
+
+void init_points(void)
+{
+    for (int i = 0; i < POINT_CNT; ++i) {
+        // unsigned int seed = time(NULL) - 100 * i;
+        unsigned int seed = 12345678 - 100 * i;
+        vertices[i] = point(seed);
+    }
 }
 
 int main(void)
@@ -82,7 +101,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "NBodySim", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -97,17 +116,9 @@ int main(void)
 
     // NOTE: OpenGL error checks have been omitted for brevity
 
-    const GLubyte* version = glGetString(GL_VERSION);
-    const GLubyte* glslVersion =
-        glGetString(GL_SHADING_LANGUAGE_VERSION);
+    show_version();
 
-    GLint major, minor;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-    printf("GL Version (string)  : %s\n", version);
-    printf("GL Version (integer) : %d.%d\n", major, minor);
-    printf("GLSL Version         : %s\n", glslVersion);
+    init_points();
 
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
@@ -135,14 +146,14 @@ int main(void)
     vsize_location = glGetAttribLocation(program, "vSize");
 
     glEnableVertexAttribArray(vpos_location);
-    glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
         sizeof(vertices[0]), (void*)0);
     glEnableVertexAttribArray(vcol_location);
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-        sizeof(vertices[0]), (void*)(sizeof(float) * 2));
+        sizeof(vertices[0]), (void*)(sizeof(float) * 3));
     glEnableVertexAttribArray(vsize_location);
     glVertexAttribPointer(vsize_location, 1, GL_FLOAT, GL_FALSE,
-        sizeof(vertices[0]), (void*)(sizeof(float) * 5));
+        sizeof(vertices[0]), (void*)(sizeof(float) * 6));
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -194,7 +205,7 @@ int main(void)
         glUniformMatrix4fv(vmodel_location, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(vview_location, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(vprojection_location, 1, GL_FALSE, glm::value_ptr(projection));
-        glDrawArrays(GL_POINTS, 0, 3);
+        glDrawArrays(GL_POINTS, 0, POINT_CNT);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
