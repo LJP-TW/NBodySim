@@ -1,4 +1,4 @@
-#include <glad/gl.h>
+#include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -9,38 +9,51 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifndef GL_POINT_SPRITE
+#  define GL_POINT_SPRITE 0x8861
+#endif
+
 static const struct
 {
     float x, y;
     float r, g, b;
+    float size;
 } vertices[3] =
 {
-    { -0.6f, -0.4f, 1.f, 0.f, 0.f },
-    {  0.6f, -0.4f, 0.f, 1.f, 0.f },
-    {   0.f,  0.6f, 0.f, 0.f, 1.f }
+    { -0.6f, -0.4f, 1.f, 0.f, 0.f, 20.0f },
+    {  0.6f, -0.4f, 0.f, 1.f, 0.f, 10.0f },
+    {   0.f,  0.6f, 0.f, 0.f, 1.f, 30.0f }
 };
 
 static const char* vertex_shader_text =
-"#version 110\n"
+"#version 460\n"
 "uniform mat4 vTransform;\n"
 "uniform mat4 vModel;\n"
 "uniform mat4 vView;\n"
 "uniform mat4 vProjection;\n"
 "attribute vec3 vCol;\n"
 "attribute vec2 vPos;\n"
+"attribute float vSize;\n"
 "varying vec3 color;\n"
 "void main()\n"
 "{\n"
 "    gl_Position = vProjection * vView * vModel * vTransform * vec4(vPos, 0.0, 1.0);\n"
+"    gl_PointSize = vSize;\n"
 "    color = vCol;\n"
 "}\n";
 
 static const char* fragment_shader_text =
-"#version 110\n"
+"#version 460\n"
 "varying vec3 color;\n"
 "void main()\n"
 "{\n"
-"    gl_FragColor = vec4(color, 1.0);\n"
+"    vec2 v = gl_PointCoord - vec2(0.5, 0.5);\n"
+"    float r = v.x * v.x + v.y * v.y;\n"
+"    if (r > 0.25) {\n"
+"        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"
+"    } else {\n"
+"        gl_FragColor = vec4(color, 1.0);\n"
+"    }\n"
 "}\n";
 
 static void error_callback(int error, const char* description)
@@ -59,7 +72,7 @@ int main(void)
     GLFWwindow* window;
     GLuint vertex_buffer, vertex_shader, fragment_shader, program;
     GLint vtransform_location, vmodel_location, vview_location, vprojection_location;
-    GLint vpos_location, vcol_location;
+    GLint vpos_location, vcol_location, vsize_location;
 
     glfwSetErrorCallback(error_callback);
 
@@ -79,10 +92,22 @@ int main(void)
     glfwSetKeyCallback(window, key_callback);
 
     glfwMakeContextCurrent(window);
-    gladLoadGL(glfwGetProcAddress);
+    gladLoadGL();
     glfwSwapInterval(1);
 
     // NOTE: OpenGL error checks have been omitted for brevity
+
+    const GLubyte* version = glGetString(GL_VERSION);
+    const GLubyte* glslVersion =
+        glGetString(GL_SHADING_LANGUAGE_VERSION);
+
+    GLint major, minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+    printf("GL Version (string)  : %s\n", version);
+    printf("GL Version (integer) : %d.%d\n", major, minor);
+    printf("GLSL Version         : %s\n", glslVersion);
 
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
@@ -107,6 +132,7 @@ int main(void)
     vprojection_location = glGetUniformLocation(program, "vProjection");
     vpos_location = glGetAttribLocation(program, "vPos");
     vcol_location = glGetAttribLocation(program, "vCol");
+    vsize_location = glGetAttribLocation(program, "vSize");
 
     glEnableVertexAttribArray(vpos_location);
     glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE,
@@ -114,6 +140,17 @@ int main(void)
     glEnableVertexAttribArray(vcol_location);
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
         sizeof(vertices[0]), (void*)(sizeof(float) * 2));
+    glEnableVertexAttribArray(vsize_location);
+    glVertexAttribPointer(vsize_location, 1, GL_FLOAT, GL_FALSE,
+        sizeof(vertices[0]), (void*)(sizeof(float) * 5));
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_PROGRAM_POINT_SIZE);
+
+    glEnable(GL_POINT_SPRITE);
+    glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -157,7 +194,7 @@ int main(void)
         glUniformMatrix4fv(vmodel_location, 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(vview_location, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(vprojection_location, 1, GL_FALSE, glm::value_ptr(projection));
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_POINTS, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
