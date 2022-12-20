@@ -13,15 +13,15 @@ using namespace std;
 
 point::point() :
 	_x(0), _y(0), _z(0), _r(0), _g(0), _b(0), _size(0), _mass(0),
-	_sx(0), _sy(0), _sz(0)
+	_sx(0), _sy(0), _sz(0), _padding1(0), _padding2(0)
 {
 }
 
-point::point(unsigned int seed)
+point::point(unsigned int seed) : _padding1(0), _padding2(0)
 {
 	std::default_random_engine generator(seed);
-	std::uniform_real_distribution<float> unif(-1.0, 1.0);
-	float mass_x;
+	std::uniform_real_distribution<double> unif(-1.0, 1.0);
+	double mass_x;
 
 	_x = unif(generator) * POINT_XYZ_MAX;
 	_y = unif(generator) * POINT_XYZ_MAX;
@@ -43,10 +43,10 @@ point::point(unsigned int seed)
 #endif
 }
 
-point::point(float x, float y, float z, float r, float g, float b, float size, 
-	float mass, double sx, double sy, double sz) :
+point::point(float x, float y, float z, float r, float g, float b, float size,
+	float mass, float sx, float sy, float sz) :
 	_x(x), _y(y), _z(z), _r(r), _g(g), _b(b), _size(size), _mass(mass),
-	_sx(sx), _sy(sy), _sz(sz)
+	_sx(sx), _sy(sy), _sz(sz), _padding1(0), _padding2(0)
 {
 #ifdef _DEBUG
 #	ifdef VERBOSE

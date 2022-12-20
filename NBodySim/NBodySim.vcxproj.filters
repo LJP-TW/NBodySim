@@ -33,6 +33,9 @@
     <ClCompile Include="nbody_serial.cpp">
       <Filter>Source Files\nbody</Filter>
     </ClCompile>
+    <ClCompile Include="nbody_serialsimd.cpp">
+      <Filter>Source Files\nbody</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="point.h">

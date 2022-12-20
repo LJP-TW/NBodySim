@@ -100,6 +100,7 @@ void banner(void)
 {
 	printf("======== NBODYSIM ========\n");
 	printf("1: Serial\n");
+	printf("2: Serial SIMD\n");
 	printf("> ");
 }
 
@@ -173,10 +174,10 @@ int main(void)
 		sizeof(vertices_1[0]), (void *)0);
 	glEnableVertexAttribArray(vcol_location);
 	glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)(sizeof(float) * 3));
+		sizeof(vertices_1[0]), (void *)(sizeof(float) * 4));
 	glEnableVertexAttribArray(vsize_location);
 	glVertexAttribPointer(vsize_location, 1, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)(sizeof(float) * 6));
+		sizeof(vertices_1[0]), (void *)(sizeof(float) * 7));
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -192,6 +193,8 @@ int main(void)
 	case 1:
 		calculateNBody = nBodyCalculateSerial;
 		break;
+	case 2:
+		calculateNBody = nBodyCalculateSerialSIMD;
 	default:
 		calculateNBody = nBodyCalculateSerial;
 	}

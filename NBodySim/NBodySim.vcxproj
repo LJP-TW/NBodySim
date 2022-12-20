@@ -135,6 +135,7 @@
     <ClCompile Include="glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nbody_serial.cpp" />
+    <ClCompile Include="nbody_serialsimd.cpp" />
     <ClCompile Include="point.cpp" />
   </ItemGroup>
   <ItemGroup>
