@@ -21,5 +21,5 @@ After compiling, you need to copy **glfw3.dll** from **glfw-3.3.8.bin.WIN64/lib-
 
 # DEMO
 
-![](https://raw.githubusercontent.com/LJP-TW/NBodySim/main/docs/demo.gif)
+![](https://github.com/LJP-TW/NBodySim/blob/main/docs/demo.gif?raw=true)
 
