@@ -18,8 +18,8 @@
 #  define GL_POINT_SPRITE 0x8861
 #endif
 
-static point vertices_1[POINT_CNT];
-static point vertices_2[POINT_CNT];
+__declspec(align(0x10)) static point vertices_1[POINT_CNT];
+__declspec(align(0x10)) static point vertices_2[POINT_CNT];
 
 static const char *vertex_shader_text =
 "#version 460\n"
@@ -172,13 +172,13 @@ int main(void)
 
 	glEnableVertexAttribArray(vpos_location);
 	glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)0);
+		sizeof(vertices_1[0]), (void *)(&((point *)0)->_x));
 	glEnableVertexAttribArray(vcol_location);
 	glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)(sizeof(float) * 4));
+		sizeof(vertices_1[0]), (void *)(&((point *)0)->_r));
 	glEnableVertexAttribArray(vsize_location);
 	glVertexAttribPointer(vsize_location, 1, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)(sizeof(float) * 7));
+		sizeof(vertices_1[0]), (void *)(&((point *)0)->_size));
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

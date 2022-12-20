@@ -1,6 +1,6 @@
 #pragma once
 
-struct point
+__declspec(align(0x10)) struct point
 {
     point();
     point(unsigned int seed);
@@ -12,9 +12,15 @@ struct point
     void log(unsigned int seed);
 #endif
 
-    float _x, _y, _z, _padding1;
-    float _r, _g, _b;
+    __declspec(align(0x10)) float _x;
+    float _y;
+    float _z;
+    __declspec(align(0x10)) float _r;
+    float _g;
+    float _b;
     float _size;
-    float _sx, _sy, _sz, _padding2; // speed
-    float _mass;
+    __declspec(align(0x10)) float _sx; // speed
+    float _sy;
+    float _sz;
+    __declspec(align(0x10)) float _mass;
 };
