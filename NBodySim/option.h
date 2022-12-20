@@ -19,22 +19,22 @@
 #endif
 
 #ifdef DEMO_GRAVITATIONAL_SLINGSHOT
-#   define SEED 12345678 - 100 * i
+#   define SEED 0xdeadbeef - 7000 * i
 #	define GRAVITATIONAL_G 6.6743
 #   define DELTA_TIME_MUL 4000
-#	define POINT_CNT 2
-#	define POINT_XYZ_MAX  10000.0
+#	define POINT_CNT 4
+#	define POINT_XYZ_MAX  5000.0
 #	define POINT_SIZE_MAX 50.0
 #	define POINT_MASS_MAX 100.0
 #	define POINT_SPEED_MAX 1.0
 #endif
 
 #ifdef DEMO_BINARY_STAR_SYSTEM
-#   define SEED 5566888 - 100 * i
+#   define SEED 12345680 - 2000 * i
 #	define GRAVITATIONAL_G 6.6743
-#   define DELTA_TIME_MUL 500
-#	define POINT_CNT 15
-#	define POINT_XYZ_MAX  10000.0
+#   define DELTA_TIME_MUL 4000
+#	define POINT_CNT 2
+#	define POINT_XYZ_MAX  5000.0
 #	define POINT_SIZE_MAX 50.0
 #	define POINT_MASS_MAX 100.0
 #	define POINT_SPEED_MAX 1.0

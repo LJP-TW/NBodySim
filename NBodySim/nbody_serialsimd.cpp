@@ -4,20 +4,17 @@
 #include "option.h"
 #include "nbody.h"
 
-// TODO: Add z-axis
 static void _nBodyCalculate(const point *currpoints, point *newpoint, int i, double dt)
 {
 	double G = GRAVITATIONAL_G;
 	__m128 vepi;
 	__m128 vpow;
 	// Acceleration
-	double ax = 0;
-	double ay = 0;
-	// double az = 0;
 	__m128 vaxyz;
 	__m128 vG;
 	__m128 vdt;
-	__m128 vsxy;
+	__m128 vsxyz;
+	__m128 vpxyz;
 	__m128 vtmp;
 
 	vaxyz = _mm_set_ps1(0.0);
@@ -49,25 +46,19 @@ static void _nBodyCalculate(const point *currpoints, point *newpoint, int i, dou
 		vaxyz = _mm_add_ps(vaxyz, vmass);
 	}
 
-	// ax *= G;
-	// ay *= G;
-	// az *= G;
 	vaxyz = _mm_mul_ps(vaxyz, vG);
 
 	// Update speed
-	// newpoint->_sx = currpoints[i]._sx + ax * dt;
-	// newpoint->_sy = currpoints[i]._sy + ay * dt;
-	// newpoint->_sz = currpoints[i]._sz + az * dt;
-	vsxy = _mm_load_ps(&currpoints[i]._sx);
+	vsxyz = _mm_load_ps(&currpoints[i]._sx);
 	vtmp = _mm_mul_ps(vaxyz, vdt);
-
-	vsxy = _mm_add_ps(vsxy, vtmp);
-
+	vsxyz = _mm_add_ps(vsxyz, vtmp);
+	_mm_store_ps(&newpoint->_sx, vsxyz);
 
 	// Update position
-	newpoint->_x = currpoints[i]._x + newpoint->_sx * dt;
-	newpoint->_y = currpoints[i]._y + newpoint->_sy * dt;
-	// newpoint->_z = currpoints[i]._z + newpoint->_sz * dt;
+	vpxyz = _mm_load_ps(&currpoints[i]._x);
+	vtmp = _mm_mul_ps(vsxyz, vdt);
+	vpxyz = _mm_add_ps(vpxyz, vtmp);
+	_mm_store_ps(&newpoint->_x, vpxyz);
 }
 
 void nBodyCalculateSerialSIMD(const point *currpoints, point *newpoints, double dt)
