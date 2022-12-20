@@ -3,6 +3,10 @@
 #include "option.h"
 #include "nbody.h"
 
+#ifdef VERBOSE
+#include "stdio.h"
+#endif
+
 // Ref: https://yangwc.com/2019/06/20/NbodySimulation/
 static void _nBodyCalculate(const point *currpoints, point *newpoint, int i, double dt)
 {
@@ -50,12 +54,16 @@ void nBodyCalculateSerial(const point *currpoints, point *newpoints, double dt)
 	for (int i = 0; i < POINT_CNT; ++i) {
 		_nBodyCalculate(currpoints, &newpoints[i], i, dt);
 
-#ifdef VERBOSE
+#ifdef _DEBUG
+#	ifdef VERBOSE
 		newpoints[i].log();
+#	endif
 #endif
 	}
 
-#ifdef VERBOSE
+#ifdef _DEBUG
+#	ifdef VERBOSE
 	printf("\n");
+#	endif
 #endif
 }

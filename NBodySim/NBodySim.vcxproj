@@ -74,6 +74,10 @@
     <LibraryPath>$(SolutionDir)\lib\glfw-3.3.8.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)\lib\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)\lib\glm-0.9.9.8\glm\;$(SolutionDir)\NBodySim\glad\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(SolutionDir)\lib\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)\lib\glm-0.9.9.8\glm\;$(SolutionDir)\NBodySim\glad\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\lib\glfw-3.3.8.bin.WIN64\lib-vc2022;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -109,6 +113,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,17 +129,21 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMPSupport>true</OpenMPSupport>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="nbody_parallelsimd.cpp" />
     <ClCompile Include="nbody_serial.cpp" />
     <ClCompile Include="nbody_serialsimd.cpp" />
     <ClCompile Include="point.cpp" />
