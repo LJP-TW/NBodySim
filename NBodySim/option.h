@@ -6,6 +6,7 @@
 // #define DEMO_REAL_WORLD
 
 // #define VERBOSE
+// #define DISABLE_LIGHT
 
 #ifdef DEMO_TESTING
 #   define SEED 0xfaceb00c - 0x55aa1 * i

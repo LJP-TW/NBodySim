@@ -1,69 +1,75 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <glad/glad.h>
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#undef GLAD_GL_IMPLEMENTATION
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+
+#include "opengl_context.h"
 
 #include "option.h"
 #include "point.h"
 #include "nbody.h"
-
-#ifndef GL_POINT_SPRITE
-#  define GL_POINT_SPRITE 0x8861
-#endif
+#include "camera.h"
 
 __declspec(align(0x10)) static point vertices_1[POINT_CNT];
 __declspec(align(0x10)) static point vertices_2[POINT_CNT];
 
-static const char *vertex_shader_text =
-"#version 460\n"
-"uniform mat4 vTransform;\n"
-"uniform mat4 vModel;\n"
-"uniform mat4 vView;\n"
-"uniform mat4 vProjection;\n"
-"attribute vec3 vCol;\n"
-"attribute vec3 vPos;\n"
-"attribute float vSize;\n"
-"varying vec3 color;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = vProjection * vView * vModel * vTransform * vec4(vPos, 1.0);\n"
-"    gl_PointSize = vSize;\n"
-"    color = vCol;\n"
-"}\n";
+static void light()
+{
+	GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1 };
+	GLfloat light_diffuse[] = { 0.8,0.8,0.8, 1 };
+	GLfloat light_ambient[] = { 0.6, 0.6, 0.6, 1 };
+	GLfloat light_position[] = { 10, 10, 10, 1.0 };
 
-static const char *fragment_shader_text =
-"#version 460\n"
-"varying vec3 color;\n"
-"void main()\n"
-"{\n"
-"    vec2 v = gl_PointCoord - vec2(0.5, 0.5);\n"
-"    float r = v.x * v.x + v.y * v.y;\n"
-"    if (r >= 0.2) {\n"
-"        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);\n"
-"    } else {\n"
-"        gl_FragColor = vec4(color, 1.0);\n"
-"    }\n"
-"}\n";
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+}
 
-static void error_callback(int error, const char *description)
+static void errorCallback(int error, const char *description)
 {
 	fprintf(stderr, "Error: %s\n", description);
 }
 
-static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+static void resizeCallback(GLFWwindow *window, int width, int height)
 {
+	OpenGLContext::framebufferResizeCallback(window, width, height);
+	auto ptr = static_cast<Camera *>(glfwGetWindowUserPointer(window));
+
+	if (ptr) {
+		ptr->updateProjectionMatrix(OpenGLContext::getAspectRatio());
+	}
+}
+
+static void keyCallback(GLFWwindow *window, int key, int, int action, int)
+{
+	if (action == GLFW_REPEAT)
+		return;
+
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-void show_version(void)
+static void initOpenGL()
+{
+	OpenGLContext::createContext(21, GLFW_OPENGL_ANY_PROFILE);
+	GLFWwindow *window = OpenGLContext::getWindow();
+
+	glfwSetWindowTitle(window, "NBodySim");
+	glfwSetErrorCallback(errorCallback);
+	glfwSetFramebufferSizeCallback(window, resizeCallback);
+	glfwSetKeyCallback(window, keyCallback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+static void showVersion(void)
 {
 	const GLubyte *version = glGetString(GL_VERSION);
 	const GLubyte *glslVersion =
@@ -78,7 +84,7 @@ void show_version(void)
 	printf("GLSL Version         : %s\n", glslVersion);
 }
 
-void init_points(void)
+static void initPoints(void)
 {
 	for (int i = 0; i < POINT_CNT; ++i) {
 #ifdef SEED
@@ -96,7 +102,7 @@ void init_points(void)
 	}
 }
 
-void banner(void)
+static void banner(void)
 {
 	printf("======== NBODYSIM ========\n");
 	printf("1: Serial\n");
@@ -105,12 +111,37 @@ void banner(void)
 	printf("> ");
 }
 
+void drawSphere(double r, int lats, int longs, float px, float py, float pz)
+{
+	int i, j;
+
+	for (i = 0; i <= lats; i++) {
+		double lat0 = M_PI * (-0.5 + (double)(i - 1) / lats);
+		double z0 = sin(lat0);
+		double zr0 = cos(lat0);
+
+		double lat1 = M_PI * (-0.5 + (double)i / lats);
+		double z1 = sin(lat1);
+		double zr1 = cos(lat1);
+
+		glBegin(GL_QUAD_STRIP);
+		for (j = 0; j <= longs; j++) {
+			double lng = 2 * M_PI * (double)(j - 1) / longs;
+			double x = cos(lng);
+			double y = sin(lng);
+
+			glNormal3f(x * zr0, y * zr0, z0);
+			glVertex3f(r * x * zr0 + px, r * y * zr0 + py + 4000, r * z0 + pz);
+			glNormal3f(x * zr1, y * zr1, z1);
+			glVertex3f(r * x * zr1 + px, r * y * zr1 + py + 4000, r * z1 + pz);
+		}
+		glEnd();
+	}
+}
+
 int main(void)
 {
 	GLFWwindow *window;
-	GLuint vertex_buffer, vertex_shader, fragment_shader, program;
-	GLint vtransform_location, vmodel_location, vview_location, vprojection_location;
-	GLint vpos_location, vcol_location, vsize_location;
 	double prevtime;
 	point *points1 = vertices_1, *points2 = vertices_2;
 	unsigned long long int estimate_round = 0;
@@ -118,75 +149,20 @@ int main(void)
 	nBodyFunc calculateNBody;
 	int choice;
 
-	glfwSetErrorCallback(error_callback);
+	initOpenGL();
 
-	if (!glfwInit())
-		exit(EXIT_FAILURE);
+	window = OpenGLContext::getWindow();
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	// Init Camera helper
+	Camera camera(glm::vec3(0, 2, 5));
+	camera.initialize(OpenGLContext::getAspectRatio());
 
-	window = glfwCreateWindow(1280, 720, "NBodySim", NULL, NULL);
-	if (!window)
-	{
-		glfwTerminate();
-		exit(EXIT_FAILURE);
-	}
+	// Store camera as glfw global variable for callbasks use
+	glfwSetWindowUserPointer(window, &camera);
 
-	glfwSetKeyCallback(window, key_callback);
+	showVersion();
 
-	glfwMakeContextCurrent(window);
-	gladLoadGL();
-	glfwSwapInterval(1);
-
-	// NOTE: OpenGL error checks have been omitted for brevity
-
-	show_version();
-
-	init_points();
-
-	glGenBuffers(1, &vertex_buffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_1), vertices_1, GL_STATIC_DRAW);
-
-	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-	glCompileShader(vertex_shader);
-
-	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-	glCompileShader(fragment_shader);
-
-	program = glCreateProgram();
-	glAttachShader(program, vertex_shader);
-	glAttachShader(program, fragment_shader);
-	glLinkProgram(program);
-
-	vtransform_location = glGetUniformLocation(program, "vTransform");
-	vmodel_location = glGetUniformLocation(program, "vModel");
-	vview_location = glGetUniformLocation(program, "vView");
-	vprojection_location = glGetUniformLocation(program, "vProjection");
-	vpos_location = glGetAttribLocation(program, "vPos");
-	vcol_location = glGetAttribLocation(program, "vCol");
-	vsize_location = glGetAttribLocation(program, "vSize");
-
-	glEnableVertexAttribArray(vpos_location);
-	glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)(&((point *)0)->_x));
-	glEnableVertexAttribArray(vcol_location);
-	glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)(&((point *)0)->_r));
-	glEnableVertexAttribArray(vsize_location);
-	glVertexAttribPointer(vsize_location, 1, GL_FLOAT, GL_FALSE,
-		sizeof(vertices_1[0]), (void *)(&((point *)0)->_size));
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glEnable(GL_PROGRAM_POINT_SIZE);
-
-	glEnable(GL_POINT_SPRITE);
-	glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+	initPoints();
 
 	banner();
 	scanf("%d", &choice);
@@ -206,35 +182,54 @@ int main(void)
 
 	prevtime = glfwGetTime();
 
-	while (!glfwWindowShouldClose(window))
-	{
-		float ratio;
-		int width, height;
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+
+#ifndef DISABLE_LIGHT
+	glEnable(GL_LIGHTING);
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_LIGHT0);
+	light();
+#endif
+
+	while (!glfwWindowShouldClose(window)) {
 		double dt; // delta time
 		double currtime;
 		point *tmp;
-		// mat4x4 m, p, mvp;
-		glm::mat4 trans(1.0f);
-		glm::mat4 model(1.0f);
-		glm::mat4 view(1.0f);
-		glm::mat4 projection(1.0f);
 
-		glfwGetFramebufferSize(window, &width, &height);
-		ratio = width / (float)height;
+		// Polling events.
+		glfwPollEvents();
 
-		glViewport(0, 0, width, height);
-		glClear(GL_COLOR_BUFFER_BIT);
+		// Update camera position and view
+		camera.move(window);
+
+		// GL_XXX_BIT can simply "OR" together to use.
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Projection Matrix
+		glMatrixMode(GL_PROJECTION);
+		glLoadMatrixf(camera.getProjectionMatrix());
+
+		// ModelView Matrix
+		glMatrixMode(GL_MODELVIEW);
+		glLoadMatrixf(camera.getViewMatrix());
+
+#ifndef DISABLE_LIGHT
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		glClearDepth(1.0f);
+#endif
 
 		currtime = (float)glfwGetTime();
 		dt = currtime - prevtime;
 		prevtime = currtime;
 
-		dt *= DELTA_TIME_MUL;
-
 		estimate_round += 1;
 		estimate_prevtime = glfwGetTime();
 
-		calculateNBody(points1, points2, dt);
+		calculateNBody(points1, points2, dt * DELTA_TIME_MUL);
 
 		estimate_time += glfwGetTime() - estimate_prevtime;
 
@@ -242,31 +237,22 @@ int main(void)
 		points1 = points2;
 		points2 = tmp;
 
-		// Update buffer
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices_1), points1);
+		glScalef(0.0001f, 0.0001f, 0.0001f);
 
-		// Update matrices
-		// mapping (10000.0, 10000.0) to (1.0, 1.0)
-		model = glm::scale(model, glm::vec3(0.0001f, 0.0001f, 0.0001f));
+		for (int i = 0; i < POINT_CNT; i++) {
+			glColor3f(points1[i]._r, points1[i]._g, points1[i]._b);
+			drawSphere(points1[i]._mass, 10, 10, points1[i]._x, points1[i]._y, points1[i]._z);
+		}
 
-		// TODO: Consider z-axis
-		// view = glm::translate(view, glm::vec3(0.0f, 0.0f, -1.0f));
-		// projection = glm::perspective(glm::radians(110.0f), ratio, 0.5f, 100.0f);
+		// Update FPS
+		if (dt != 0 && estimate_round % 10 == 0) {
+			std::string title = "FPS = " + std::to_string((int)(1 / dt));
 
-		glUseProgram(program);
-		glUniformMatrix4fv(vtransform_location, 1, GL_FALSE, glm::value_ptr(trans));
-		glUniformMatrix4fv(vmodel_location, 1, GL_FALSE, glm::value_ptr(model));
-		glUniformMatrix4fv(vview_location, 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(vprojection_location, 1, GL_FALSE, glm::value_ptr(projection));
-		glDrawArrays(GL_POINTS, 0, POINT_CNT);
+			glfwSetWindowTitle(window, title.c_str());
+		}
 
 		glfwSwapBuffers(window);
-		glfwPollEvents();
 	}
-
-	glfwDestroyWindow(window);
-
-	glfwTerminate();
 
 	printf("Total round: %lld\n", estimate_round);
 	printf("Avg calculating time: %f ms\n", estimate_time * 1000 / estimate_round);

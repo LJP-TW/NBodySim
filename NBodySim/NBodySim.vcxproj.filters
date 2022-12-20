@@ -13,19 +13,19 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\glad">
-      <UniqueIdentifier>{796111e0-caaf-49de-8644-9aec6160b812}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\nbody">
       <UniqueIdentifier>{8c64aa3c-f8bf-4a0b-a239-a8226d412d0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\opengl">
+      <UniqueIdentifier>{094b494e-deec-43cb-ac65-493af57982d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\opengl">
+      <UniqueIdentifier>{483c80a9-dfe6-4c2b-83ef-ed0f97240f9e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="glad\src\glad.c">
-      <Filter>Source Files\glad</Filter>
     </ClCompile>
     <ClCompile Include="point.cpp">
       <Filter>Source Files</Filter>
@@ -39,6 +39,12 @@
     <ClCompile Include="nbody_parallelsimd.cpp">
       <Filter>Source Files\nbody</Filter>
     </ClCompile>
+    <ClCompile Include="opengl_context.cpp">
+      <Filter>Source Files\opengl</Filter>
+    </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="point.h">
@@ -48,6 +54,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="nbody.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opengl_context.h">
+      <Filter>Header Files\opengl</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
