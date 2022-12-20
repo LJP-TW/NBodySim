@@ -16,6 +16,9 @@
     <Filter Include="Source Files\glad">
       <UniqueIdentifier>{796111e0-caaf-49de-8644-9aec6160b812}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\nbody">
+      <UniqueIdentifier>{8c64aa3c-f8bf-4a0b-a239-a8226d412d0e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -27,12 +30,18 @@
     <ClCompile Include="point.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="nbody_serial.cpp">
+      <Filter>Source Files\nbody</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="point.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="option.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nbody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

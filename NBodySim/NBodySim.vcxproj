@@ -134,9 +134,11 @@
   <ItemGroup>
     <ClCompile Include="glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="nbody_serial.cpp" />
     <ClCompile Include="point.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="nbody.h" />
     <ClInclude Include="option.h" />
     <ClInclude Include="point.h" />
   </ItemGroup>
