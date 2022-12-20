@@ -11,7 +11,7 @@
 #   define SEED 0xfaceb00c - 0x55aa1 * i
 #	define GRAVITATIONAL_G 6.6743
 #   define DELTA_TIME_MUL 100
-#	define POINT_CNT 2000
+#	define POINT_CNT 5000
 #	define POINT_XYZ_MAX  10000.0
 #	define POINT_SIZE_MAX 10.0
 #	define POINT_MASS_MAX 100.0
