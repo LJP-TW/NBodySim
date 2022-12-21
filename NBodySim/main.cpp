@@ -157,7 +157,7 @@ int main(void)
 	window = OpenGLContext::getWindow();
 
 	// Init Camera helper
-	Camera camera(glm::vec3(0, 2, 5));
+	Camera camera(glm::vec3(0, 0, 5));
 	camera.initialize(OpenGLContext::getAspectRatio());
 
 	// Store camera as glfw global variable for callbasks use

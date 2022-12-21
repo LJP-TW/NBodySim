@@ -92,6 +92,7 @@ __global__ static void _nBodyCalculateCUDA(const point *currpoints, point *newpo
     float y = 0;
     float z = 0;
 
+    #pragma unroll POINT_CNT
     for (int j = 0; j < POINT_CNT; ++j) {
         float rx;
         float ry;

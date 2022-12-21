@@ -9,14 +9,14 @@
 // #define DISABLE_LIGHT
 
 #ifdef DEMO_TESTING
-#   define SEED 0xfaceb00c - 0x55aa1 * i
+#   define SEED 0xdeadbeef - 0x55665566 * i
 #	define GRAVITATIONAL_G 6.6743
 #   define DELTA_TIME_MUL 100
-#	define POINT_CNT 5000
-#	define POINT_XYZ_MAX  10000.0
+#	define POINT_CNT 10000
+#	define POINT_XYZ_MAX  30000.0
 #	define POINT_SIZE_MAX 10.0
 #	define POINT_MASS_MAX 100.0
-#	define POINT_SPEED_MAX 1.0
+#	define POINT_SPEED_MAX 100.0
 #endif
 
 #ifdef DEMO_GRAVITATIONAL_SLINGSHOT
