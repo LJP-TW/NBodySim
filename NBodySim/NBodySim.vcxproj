@@ -148,6 +148,7 @@
     <ClCompile Include="nbody_parallelsimd.cpp" />
     <ClCompile Include="nbody_serial.cpp" />
     <ClCompile Include="nbody_serialsimd.cpp" />
+    <ClCompile Include="nbody_serialsimd2.cpp" />
     <ClCompile Include="opengl_context.cpp" />
     <ClCompile Include="point.cpp" />
   </ItemGroup>

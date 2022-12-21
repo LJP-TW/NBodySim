@@ -107,8 +107,9 @@ static void banner(void)
 	printf("======== NBODYSIM ========\n");
 	printf("1: Serial\n");
 	printf("2: Serial SIMD\n");
-	printf("3: Parallel SIMD\n");
-	printf("4: CUDA\n");
+	printf("3: Serial SIMD 2\n");
+	printf("4: Parallel SIMD\n");
+	printf("5: CUDA\n");
 	printf("> ");
 }
 
@@ -175,9 +176,12 @@ int main(void)
 		calculateNBody = nBodyCalculateSerialSIMD;
 		break;
 	case 3:
-		calculateNBody = nBodyCalculateParallelSIMD;
+		calculateNBody = nBodyCalculateSerialSIMD256;
 		break;
 	case 4:
+		calculateNBody = nBodyCalculateParallelSIMD;
+		break;
+	case 5:
 		calculateNBody = nBodyCalculateCUDA;
 		break;
 	default:
