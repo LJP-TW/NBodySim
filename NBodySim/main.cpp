@@ -108,6 +108,7 @@ static void banner(void)
 	printf("1: Serial\n");
 	printf("2: Serial SIMD\n");
 	printf("3: Parallel SIMD\n");
+	printf("4: CUDA\n");
 	printf("> ");
 }
 
@@ -175,6 +176,9 @@ int main(void)
 		break;
 	case 3:
 		calculateNBody = nBodyCalculateParallelSIMD;
+		break;
+	case 4:
+		calculateNBody = nBodyCalculateCUDA;
 		break;
 	default:
 		calculateNBody = nBodyCalculateSerial;

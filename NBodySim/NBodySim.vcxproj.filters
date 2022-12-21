@@ -66,4 +66,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="nbody_cuda.cu">
+      <Filter>Source Files\nbody</Filter>
+    </CudaCompile>
+  </ItemGroup>
 </Project>
