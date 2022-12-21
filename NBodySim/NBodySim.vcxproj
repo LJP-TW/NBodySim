@@ -146,6 +146,7 @@
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="nbody_parallelsimd.cpp" />
+    <ClCompile Include="nbody_parallelsimd2.cpp" />
     <ClCompile Include="nbody_serial.cpp" />
     <ClCompile Include="nbody_serialsimd.cpp" />
     <ClCompile Include="nbody_serialsimd2.cpp" />

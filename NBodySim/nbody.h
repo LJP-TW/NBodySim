@@ -11,4 +11,6 @@ void nBodyCalculateSerialSIMD256(const point *currpoints, point *newpoints, doub
 
 void nBodyCalculateParallelSIMD(const point *currpoints, point *newpoints, double dt);
 
+void nBodyCalculateParallelSIMD256(const point *currpoints, point *newpoints, double dt);
+
 void nBodyCalculateCUDA(const point *currpoints, point *newpoints, double dt);

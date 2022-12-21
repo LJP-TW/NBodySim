@@ -109,7 +109,8 @@ static void banner(void)
 	printf("2: Serial SIMD\n");
 	printf("3: Serial SIMD 2\n");
 	printf("4: Parallel SIMD\n");
-	printf("5: CUDA\n");
+	printf("5: Parallel SIMD 2\n");
+	printf("6: CUDA\n");
 	printf("> ");
 }
 
@@ -182,6 +183,9 @@ int main(void)
 		calculateNBody = nBodyCalculateParallelSIMD;
 		break;
 	case 5:
+		calculateNBody = nBodyCalculateParallelSIMD256;
+		break;
+	case 6:
 		calculateNBody = nBodyCalculateCUDA;
 		break;
 	default:
@@ -254,7 +258,7 @@ int main(void)
 
 		// Update FPS
 		if (dt != 0 && estimate_round % 10 == 0) {
-			std::string title = "FPS = " + std::to_string((int)(1 / dt));
+			std::string title = "FPS = " + std::to_string((int)((double)1 / dt));
 
 			glfwSetWindowTitle(window, title.c_str());
 		}
