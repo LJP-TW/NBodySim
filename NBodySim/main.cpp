@@ -20,12 +20,14 @@
 __declspec(align(0x10)) static point vertices_1[POINT_CNT];
 __declspec(align(0x10)) static point vertices_2[POINT_CNT];
 
+#define ANGEL_TO_RADIAN(x) (float)((x)*M_PI / 180.0f)
+
 static void light()
 {
 	GLfloat light_specular[] = { 0.4, 0.4, 0.4, 1 };
 	GLfloat light_diffuse[] = { 0.8,0.8,0.8, 1 };
 	GLfloat light_ambient[] = { 0.6, 0.6, 0.6, 1 };
-	GLfloat light_position[] = { 10, 10, 10, 1.0 };
+	GLfloat light_position[] = { 10, 5, 5, 1.0 };
 
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
@@ -115,32 +117,46 @@ static void banner(void)
 	printf("> ");
 }
 
-void drawSphere(double r, int lats, int longs, float px, float py, float pz)
+void nextdrawCircle(glm::quat rota, glm::vec3 *rotated, glm::vec3 *beforerotate)
 {
-	int i, j;
+	int i = 0;
 
-	for (i = 0; i <= lats; i++) {
-		double lat0 = M_PI * (-0.5 + (double)(i - 1) / lats);
-		double z0 = sin(lat0);
-		double zr0 = cos(lat0);
+	for (float angle = 0; angle < ANGEL_TO_RADIAN(360); angle += ANGEL_TO_RADIAN(360) / 15) {
+		beforerotate[i].x = sin(angle);
+		beforerotate[i].y = cos(angle);
 
-		double lat1 = M_PI * (-0.5 + (double)i / lats);
-		double z1 = sin(lat1);
-		double zr1 = cos(lat1);
+		glm::vec3 rotate = rota * glm::vec3(beforerotate[i].x, beforerotate[i].y, 0);
 
-		glBegin(GL_QUAD_STRIP);
-		for (j = 0; j <= longs; j++) {
-			double lng = 2 * M_PI * (double)(j - 1) / longs;
-			double x = cos(lng);
-			double y = sin(lng);
+		rotated[i].x = rotate.x;
+		rotated[i].y = rotate.y;
+		rotated[i].z = rotate.z;
 
-			glNormal3f(x * zr0, y * zr0, z0);
-			glVertex3f(r * x * zr0 + px, r * y * zr0 + py + 4000, r * z0 + pz);
-			glNormal3f(x * zr1, y * zr1, z1);
-			glVertex3f(r * x * zr1 + px, r * y * zr1 + py + 4000, r * z1 + pz);
-		}
-		glEnd();
+		i++;
 	}
+
+	rotated[15].x = rotated[0].x;
+	rotated[15].y = rotated[0].y;
+	rotated[15].z = rotated[0].z;
+
+	beforerotate[15].x = beforerotate[0].x;
+	beforerotate[15].y = beforerotate[0].y;
+}
+
+void drawCircle(float px, float py, float pz, float R, glm::vec3 *rotate, glm::vec3 *beforerotate, glm::quat rota)
+{
+	int i = 0;
+
+	glBegin(GL_TRIANGLE_FAN);
+
+	glNormal3f(0.0f, 0.0f, 1);
+	glVertex3f(px, py, pz);
+
+	for (i = 15; i >= 0; i--) {
+		glNormal3f(beforerotate[i].x, beforerotate[i].y, 0);
+		glVertex3f(px + rotate[i].x * R, py + rotate[i].y * R, pz + rotate[i].z * R);
+	}
+
+	glEnd();
 }
 
 int main(void)
@@ -151,6 +167,7 @@ int main(void)
 	unsigned long long int estimate_round = 0;
 	double estimate_time = 0, estimate_prevtime;
 	nBodyFunc calculateNBody;
+	double avgdt = 0.0;
 	int choice;
 
 	initOpenGL();
@@ -241,6 +258,7 @@ int main(void)
 		currtime = (float)glfwGetTime();
 		dt = currtime - prevtime;
 		prevtime = currtime;
+		avgdt += dt;
 
 		estimate_round += 1;
 		estimate_prevtime = glfwGetTime();
@@ -255,15 +273,22 @@ int main(void)
 
 		glScalef(0.0001f, 0.0001f, 0.0001f);
 
+		// set drawcircle  
+		glm::quat rota = camera.rotation;
+		glm::vec3 rotated[16];
+		glm::vec3 beforerotate[16];
+		nextdrawCircle(rota, rotated, beforerotate);
+
 		for (int i = 0; i < POINT_CNT; i++) {
 			glColor3f(points1[i]._r, points1[i]._g, points1[i]._b);
-			drawSphere(points1[i]._mass, 10, 10, points1[i]._x, points1[i]._y, points1[i]._z);
+			drawCircle(points1[i]._x, points1[i]._y, points1[i]._z, points1[i]._mass, rotated, beforerotate, rota);
 		}
 
 		// Update FPS
 		if (dt != 0 && estimate_round % 10 == 0) {
-			std::string title = "FPS = " + std::to_string((int)((double)1 / dt));
-
+			avgdt /= 10;
+			std::string title = "N = " + std::to_string((int)POINT_CNT) + ", FPS = " + std::to_string((int)(1 / avgdt));
+			avgdt = 0;
 			glfwSetWindowTitle(window, title.c_str());
 		}
 

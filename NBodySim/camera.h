@@ -15,14 +15,16 @@ public:
 	const float *getProjectionMatrix() const { return glm::value_ptr(projectionMatrix); }
 	const float *getViewMatrix() const { return glm::value_ptr(viewMatrix); }
 
-	glm::vec3 front;
+	glm::quat rotation;
 
 private:
+	glm::vec3 front;
 	glm::vec3 position;
+	glm::vec3 rotated_front;
+	glm::vec3 rotated_up;
 	glm::vec3 up;
 	glm::vec3 right;
 
-	glm::quat rotation;
 	// TODO (optional): Change these values if your WASD or mouse move too slow or too fast.
 	constexpr static float keyboardMoveSpeed = 0.1f;
 	constexpr static float mouseMoveSpeed = 0.001f;

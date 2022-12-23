@@ -64,21 +64,13 @@ void Camera::move(GLFWwindow *window)
 
 void Camera::updateViewMatrix()
 {
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
     constexpr glm::vec3 original_front(0, 0, -1);
     constexpr glm::vec3 original_up(0, 1, 0);
 
-    glm::vec3 rotated_front = this->rotation * original_front;
-    glm::vec3 rotated_up = this->rotation * original_up;
-    glm::vec3 cameraRight = glm::cross(rotated_up, rotated_front);
-    // glm::mat4 View = glm::lookAt(cameraRight, rotated_front, rotated_up);
-
-    viewMatrix = glm::identity<glm::mat4>();
-    viewMatrix = glm::lookAt(this->position, this->position + rotated_front, rotated_up);
-    // viewMatrix = glm::lookAt(this->position, cameraRight + rotated_front, rotated_up);
-    // viewMatrix = glm::lookAt(glm::vec3(0, 0, -1),
-    //  glm::vec3(0, 1, 0),
-    // glm::vec3(0, 0, 1));
+    front = rotation * original_front;
+    up = rotation * original_up;
+    right = glm::cross(front, up);
+    viewMatrix = glm::lookAt(position, position + front, up);
 }
 
 void Camera::updateProjectionMatrix(float aspectRatio)
@@ -86,6 +78,6 @@ void Camera::updateProjectionMatrix(float aspectRatio)
     constexpr float FOV = glm::radians(45.0f);
     constexpr float zNear = 0.1f;
     constexpr float zFar = 100.0f;
-    projectionMatrix = glm::identity<glm::mat4>();
+
     projectionMatrix = glm::perspective(FOV, aspectRatio, zNear, zFar);
 }
