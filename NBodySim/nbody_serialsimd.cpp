@@ -8,7 +8,6 @@ static void _nBodyCalculate(const point *currpoints, point *newpoint, int i, dou
 {
 	double G = GRAVITATIONAL_G;
 	__m128 vepi;
-	__m128 vpow;
 	// Acceleration
 	__m128 vaxyz;
 	__m128 vG;
@@ -19,30 +18,31 @@ static void _nBodyCalculate(const point *currpoints, point *newpoint, int i, dou
 
 	vaxyz = _mm_set_ps1(0.0);
 	vepi = _mm_set_ps1(0.0000000000001);
-	vpow = _mm_set_ps1(-1.5);
 	vG = _mm_set_ps1(G);
 	vdt = _mm_set_ps1(dt);
 
 	for (int j = 0; j < POINT_CNT; ++j) {
 		__m128 vrxyz, vjxyz, vixyz;
-		__m128 vden;
+		__m128 lenpow2;
+		__m128 len;
 		__m128 vmass;
 
 		vjxyz = _mm_load_ps(&currpoints[j]._x);
 		vixyz = _mm_load_ps(&currpoints[i]._x);
 		vrxyz = _mm_sub_ps(vjxyz, vixyz);
 
-		vden = _mm_mul_ps(vrxyz, vrxyz);
+		lenpow2 = _mm_mul_ps(vrxyz, vrxyz);
 
 		// (a1, a2, a3, a4) hadd (a1, a2, a3, a4) = (a1+a2, a3+a4, a1+a2, a3+a4)
-		vden = _mm_hadd_ps(vden, vden);
-		vden = _mm_hadd_ps(vden, vden);
-		vden = _mm_add_ps(vden, vepi);
-		vden = _mm_pow_ps(vden, vpow);
+		lenpow2 = _mm_hadd_ps(lenpow2, lenpow2);
+		lenpow2 = _mm_hadd_ps(lenpow2, lenpow2);
+		lenpow2 = _mm_add_ps(lenpow2, vepi);
+		len = _mm_sqrt_ps(lenpow2);
 
 		vmass = _mm_set_ps1(currpoints[j]._mass);
 		vmass = _mm_mul_ps(vmass, vrxyz);
-		vmass = _mm_mul_ps(vmass, vden);
+		vmass = _mm_div_ps(vmass, lenpow2);
+		vmass = _mm_div_ps(vmass, len);
 		vaxyz = _mm_add_ps(vaxyz, vmass);
 	}
 

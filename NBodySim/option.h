@@ -1,6 +1,6 @@
 #pragma once
 
-// #define ESTIMATION
+#define ESTIMATION
 
 #define DEMO_TESTING
 // #define DEMO_GRAVITATIONAL_SLINGSHOT

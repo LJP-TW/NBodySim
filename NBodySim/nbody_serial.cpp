@@ -21,17 +21,19 @@ static void _nBodyCalculate(const point *currpoints, point *newpoint, int i, dou
 		float rx;
 		float ry;
 		float rz;
-		float den; // denominator
+		float lenpow2;
+		float len;
 
 		rx = currpoints[j]._x - currpoints[i]._x;
 		ry = currpoints[j]._y - currpoints[i]._y;
 		rz = currpoints[j]._z - currpoints[i]._z;
 
-		den = sqrt(pow(rx * rx + ry * ry + rz * rz + epi, 3.0));
+		lenpow2 = rx * rx + ry * ry + rz * rz + epi;
+		len = sqrt(lenpow2);
 
-		ax += currpoints[j]._mass * rx / den;
-		ay += currpoints[j]._mass * ry / den;
-		az += currpoints[j]._mass * rz / den;
+		ax += currpoints[j]._mass * rx / len / lenpow2;
+		ay += currpoints[j]._mass * ry / len / lenpow2;
+		az += currpoints[j]._mass * rz / len / lenpow2;
 	}
 
 	ax *= G;
