@@ -1,5 +1,7 @@
 #pragma once
 
+// #define ESTIMATION
+
 #define DEMO_TESTING
 // #define DEMO_GRAVITATIONAL_SLINGSHOT
 // #define DEMO_BINARY_STAR_SYSTEM

@@ -293,6 +293,12 @@ int main(void)
 		}
 
 		glfwSwapBuffers(window);
+
+#ifdef ESTIMATION
+		if (estimate_round == 100) {
+			break;
+		}
+#endif
 	}
 
 	printf("Total round: %lld\n", estimate_round);
