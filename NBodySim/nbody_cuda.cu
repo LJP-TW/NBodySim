@@ -11,8 +11,7 @@
 
 using namespace std;
 
-#define BLOCK_NUM 512
-#define THREAD_NUM 512
+#define THREAD_NUM 1024
 
 class CUDAContext
 {
@@ -145,6 +144,7 @@ __global__ static void _nBodyCalculateCUDA(const point *currpoints, point *newpo
 void nBodyCalculateCUDA(const point *currpoints, point *newpoints, double dt)
 {
     cudaError_t cudaStatus;
+    int block_num = (POINT_CNT + THREAD_NUM - 1) / THREAD_NUM;
 
     if (!CUDAContext::inited) {
         CUDAContext::createContext();
@@ -157,7 +157,7 @@ void nBodyCalculateCUDA(const point *currpoints, point *newpoints, double dt)
         exit(EXIT_FAILURE);
     }
 
-    _nBodyCalculateCUDA<<<BLOCK_NUM, THREAD_NUM>>>(CUDAContext::CudaCurrpoints, CUDAContext::CudaResults, dt);
+    _nBodyCalculateCUDA<<<block_num, THREAD_NUM>>>(CUDAContext::CudaCurrpoints, CUDAContext::CudaResults, dt);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
